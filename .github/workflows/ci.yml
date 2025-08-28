@@ -13,6 +13,7 @@ on:
 jobs:
   bdct:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
@@ -29,7 +30,7 @@ jobs:
         run: npm run consumer:test:good
 
       - name: Consumer tests (bad)
-        if: ${{ inputs.scenario == 'bad' }}
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.scenario == 'bad' }}
         run: npm run consumer:test:bad
 
       - name: Publish consumer contract
@@ -37,18 +38,32 @@ jobs:
         env:
           PACT_BROKER_BASE_URL: ${{ secrets.PACT_BROKER_BASE_URL }}
           PACT_BROKER_TOKEN:    ${{ secrets.PACT_BROKER_TOKEN }}
+          # For bad demo runs, publish on the demo-bad branch tag; otherwise use the current ref name.
           BRANCH:               ${{ inputs.scenario == 'bad' && 'demo-bad' || github.ref_name }}
           CONSUMER_VERSION:     ${{ github.sha }}
 
       # -------- PROVIDER (OpenAPI) --------
-      - name: Publish provider contract (generated)
-        run: npm run provider:publish:gen:good
+      # We always publish the GOOD provider contract for both scenarios so that
+      # the "bad" flow demonstrates consumer incompatibility via can-i-deploy.
+      - name: Generate provider OpenAPI (GOOD)
+        run: npm run openapi:gen:good
+
+      - name: Publish provider contract (OpenAPI)
+        run: |
+          npx -y @pact-foundation/pact-cli@latest pact-broker publish-provider-contract \
+            --provider BDCT-JS-Provider \
+            --provider-app-version "${GITHUB_SHA}" \
+            --branch "${{ github.ref_name }}" \
+            --contract openapi/provider.generated.yaml \
+            --content-type application/yaml \
+            --broker-base-url "${PACT_BROKER_BASE_URL}" \
+            --broker-token "${PACT_BROKER_TOKEN}"
         env:
-          PACT_BROKER_BASE_URL:  ${{ secrets.PACT_BROKER_BASE_URL }}
-          PACT_BROKER_TOKEN:     ${{ secrets.PACT_BROKER_TOKEN }}
-          PROVIDER_BRANCH:       ${{ github.ref_name }}
+          PACT_BROKER_BASE_URL: ${{ secrets.PACT_BROKER_BASE_URL }}
+          PACT_BROKER_TOKEN:    ${{ secrets.PACT_BROKER_TOKEN }}
 
       # -------- COMPATIBILITY CHECK --------
+      # Good: prove the provider version is deployable to 'test'
       - name: can-i-deploy (provider perspective)
         if: ${{ github.event_name == 'push' || inputs.scenario == 'good' }}
         run: npm run can-i-deploy:provider
@@ -57,8 +72,9 @@ jobs:
           PACT_BROKER_TOKEN:    ${{ secrets.PACT_BROKER_TOKEN }}
           ENVIRONMENT:          test
 
+      # Bad: prove the consumer version on demo-bad is NOT deployable
       - name: can-i-deploy (consumer perspective)
-        if: ${{ inputs.scenario == 'bad' }}
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.scenario == 'bad' }}
         run: npm run can-i-deploy:consumer
         env:
           PACT_BROKER_BASE_URL: ${{ secrets.PACT_BROKER_BASE_URL }}
