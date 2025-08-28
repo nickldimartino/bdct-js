@@ -1,7 +1,3 @@
-// scripts/generate-openapi.cjs
-/* Generates openapi/provider.generated.yaml from JSDoc in src/provider/*.js
-   DEMO_BAD=true will mutate the schema to intentionally conflict with the consumer. */
-
 const path = require('path');
 const fs = require('fs');
 const YAML = require('yaml');
