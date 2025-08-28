@@ -28,7 +28,7 @@ describe('Bad contract demo', () => {
         body: {
           id: MatchersV3.integer(123),
           name: MatchersV3.string('Alice'),
-          email: MatchersV3.regex({ matcher: EMAIL_RE, generate: 'alice@example.com' }),
+          email: MatchersV3.regex(EMAIL_RE, 'alice@example.com'),
           // WRONG TYPE on purpose (provider returns boolean)
           active: MatchersV3.like('true'),
           // EXTRA required field that provider does not return

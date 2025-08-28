@@ -28,7 +28,7 @@ describe('Consumer ↔ Provider contract (GOOD)', () => {
         body: {
           id: MatchersV3.integer(123),
           name: MatchersV3.string('Jane Doe'),
-          email: MatchersV3.regex({ matcher: EMAIL_RE, generate: 'jane.doe@example.com' }),
+          email: MatchersV3.regex(EMAIL_RE, 'jane.doe@example.com'),
           active: MatchersV3.boolean(true),
         },
       });
