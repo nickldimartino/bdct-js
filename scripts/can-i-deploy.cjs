@@ -1,4 +1,5 @@
-require('dotenv').config();
+// scripts/can-i-deploy.cjs
+require('dotenv').config({ path: '.env' });
 const { spawnSync } = require('child_process');
 const fs = require('fs');
 
@@ -10,31 +11,33 @@ function req(name) {
 
 const brokerBaseUrl = req('PACT_BROKER_BASE_URL');
 const brokerToken   = req('PACT_BROKER_TOKEN');
+const participant   = req('PACTICIPANT');
+const envName       = process.env.ENVIRONMENT || 'test';
 
-const participant = process.env.PACTICIPANT || 'BDCT-JS-Provider';
-let   version     = process.env.VERSION || '';
-
-if (!version && process.env.VERSION_FILE) {
-  try {
-    version = fs.readFileSync(process.env.VERSION_FILE, 'utf8').trim();
-  } catch (e) {
-    console.error(`❌ Failed to read VERSION_FILE: ${process.env.VERSION_FILE}`);
-    process.exit(1);
+let version = process.env.VERSION || '';
+if (!version) {
+  const vf = process.env.VERSION_FILE;
+  if (vf) {
+    try {
+      version = fs.readFileSync(vf, 'utf8').trim();
+    } catch (e) {
+      console.error(`❌ Failed to read VERSION_FILE: ${vf}`);
+      process.exit(1);
+    }
   }
 }
+if (!version) version = process.env.GITHUB_SHA || '';
 
 if (!version) {
-  console.error('❌ Missing VERSION or VERSION_FILE');
+  console.error('❌ No version found. Set VERSION or VERSION_FILE (or GITHUB_SHA).');
   process.exit(1);
 }
-
-const environment = process.env.ENVIRONMENT || 'test';
 
 const args = [
   'can-i-deploy',
   '--pacticipant', participant,
   '--version', version,
-  '--to-environment', environment,
+  '--to-environment', envName,
   '--broker-base-url', brokerBaseUrl,
   '--broker-token', brokerToken
 ];
