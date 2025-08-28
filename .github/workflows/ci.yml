@@ -67,12 +67,13 @@ jobs:
       # -------- COMPATIBILITY CHECK --------
       # Good: prove the provider version is deployable to 'test'
       - name: can-i-deploy (provider perspective)
-        if: ${{ github.event_name == 'push' || inputs.scenario == 'good' }}
         run: npm run can-i-deploy:provider
         env:
           PACT_BROKER_BASE_URL: ${{ secrets.PACT_BROKER_BASE_URL }}
           PACT_BROKER_TOKEN:    ${{ secrets.PACT_BROKER_TOKEN }}
           ENVIRONMENT:          test
+          VERSION:              ${{ github.sha }}
+
 
       # Bad: prove the consumer version on demo-bad is NOT deployable
       - name: can-i-deploy (consumer perspective)
