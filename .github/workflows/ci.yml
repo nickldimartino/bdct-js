@@ -50,17 +50,17 @@ jobs:
 
       - name: Publish provider contract (OpenAPI)
         run: |
-          npx --no-install pactflow publish-provider-contract \
+          npx --no-install pactflow publish-provider-contract openapi/provider.generated.yaml \
             --provider BDCT-JS-Provider \
             --provider-app-version "${GITHUB_SHA}" \
             --branch "${{ github.ref_name }}" \
-            --contract openapi/provider.generated.yaml \
             --content-type application/yaml \
             --broker-base-url "${PACT_BROKER_BASE_URL}" \
             --broker-token "${PACT_BROKER_TOKEN}"
         env:
           PACT_BROKER_BASE_URL: ${{ secrets.PACT_BROKER_BASE_URL }}
           PACT_BROKER_TOKEN:    ${{ secrets.PACT_BROKER_TOKEN }}
+
 
 
 
