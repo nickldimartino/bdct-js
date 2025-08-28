@@ -27,8 +27,8 @@ describe('Consumer ↔ Provider contract (GOOD)', () => {
         },
       });
 
-    await provider.executeTest(async (mockUrl) => {
-      const res = await fetch(`${mockUrl}/users/123`, { headers: { Accept: 'application/json' } });
+    await provider.executeTest(async ({ url }) => {
+      const res = await fetch(`${url}/users/123`, { headers: { Accept: 'application/json' } });
       const body = await res.json();
       expect(res.status).toBe(200);
       expect(body.name).toBeDefined();
@@ -50,8 +50,8 @@ describe('Consumer ↔ Provider contract (GOOD)', () => {
         body: { error: like('Not found') },
       });
 
-    await provider.executeTest(async (mockUrl) => {
-      const res = await fetch(`${mockUrl}/users/999`, { headers: { Accept: 'application/json' } });
+    await provider.executeTest(async ({ url }) => {
+      const res = await fetch(`${url}/users/999`, { headers: { Accept: 'application/json' } });
       const body = await res.json();
       expect(res.status).toBe(404);
       expect(body.error).toBe('Not found');
