@@ -41,15 +41,6 @@ jobs:
           CONSUMER_VERSION:     ${{ github.sha }}
 
       # -------- PROVIDER (OpenAPI) --------
-      - name: Publish provider contract (good)
-        if: ${{ github.event_name == 'push' || inputs.scenario == 'good' }}
-        run: npm run provider:publish:good
-        env:
-          PACT_BROKER_BASE_URL: ${{ secrets.PACT_BROKER_BASE_URL }}
-          PACT_BROKER_TOKEN:    ${{ secrets.PACT_BROKER_TOKEN }}
-          PROVIDER_BRANCH:      ${{ github.ref_name }}
-          PROVIDER_VERSION:     ${{ github.sha }}
-
       - name: Publish provider contract (generated)
         run: npm run provider:publish:gen:good
         env:
