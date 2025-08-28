@@ -5,25 +5,18 @@
   "version": "1.0.0",
   "scripts": {
     "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest",
-
     "clean:pacts": "node -e \"require('fs').rmSync('pacts',{recursive:true,force:true})\"",
-
     "consumer:test:good": "npm run clean:pacts && cross-env NODE_OPTIONS=--experimental-vm-modules jest src/consumer/consumer.pact.test.js",
-    "consumer:test:bad":  "npm run clean:pacts && cross-env NODE_OPTIONS=--experimental-vm-modules jest src/consumer/consumer.pact.bad.test.js",
-
+    "consumer:test:bad": "npm run clean:pacts && cross-env NODE_OPTIONS=--experimental-vm-modules jest src/consumer/consumer.pact.bad.test.js",
     "consumer:publish": "node scripts/publish-consumer.cjs",
-
     "openapi:gen:good": "cross-env DEMO_BAD=false node scripts/generate-openapi.cjs",
-    "openapi:gen:bad":  "cross-env DEMO_BAD=true  node scripts/generate-openapi.cjs",
-
+    "openapi:gen:bad": "cross-env DEMO_BAD=true  node scripts/generate-openapi.cjs",
     "provider:publish:gen:good": "npm run openapi:gen:good && cross-env PROVIDER_CONTRACT=openapi/provider.generated.yaml node scripts/publish-provider.cjs",
-    "provider:publish:gen:bad":  "npm run openapi:gen:bad  && cross-env PROVIDER_CONTRACT=openapi/provider.generated.yaml node scripts/publish-provider.cjs",
-
+    "provider:publish:gen:bad": "npm run openapi:gen:bad  && cross-env PROVIDER_CONTRACT=openapi/provider.generated.yaml node scripts/publish-provider.cjs",
     "can-i-deploy:provider": "cross-env PACTICIPANT=BDCT-JS-Provider VERSION_FILE=tmp/last-provider-version.txt node scripts/can-i-deploy.cjs",
     "can-i-deploy:consumer": "cross-env PACTICIPANT=BDCT-JS-Consumer VERSION_FILE=tmp/last-consumer-version.txt node scripts/can-i-deploy.cjs",
-
     "demo:bdct:good": "npm run consumer:test:good && cross-env BRANCH=main node scripts/publish-consumer.cjs && cross-env PROVIDER_BRANCH=main npm run provider:publish:gen:good && npm run can-i-deploy:provider",
-    "demo:bdct:bad":  "npm run consumer:test:bad  && cross-env BRANCH=demo-bad node scripts/publish-consumer.cjs && cross-env PROVIDER_BRANCH=main npm run provider:publish:gen:bad  && npm run can-i-deploy:consumer"
+    "demo:bdct:bad": "npm run consumer:test:bad  && cross-env BRANCH=demo-bad node scripts/publish-consumer.cjs && cross-env PROVIDER_BRANCH=main npm run provider:publish:gen:bad  && npm run can-i-deploy:consumer"
   },
   "devDependencies": {
     "@pact-foundation/pact": "^15.0.1",
