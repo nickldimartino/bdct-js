@@ -1,4 +1,3 @@
-// src/provider/server.js
 import express from 'express';
 
 // --- JSDoc: shared schemas ---------------------------------------------------
