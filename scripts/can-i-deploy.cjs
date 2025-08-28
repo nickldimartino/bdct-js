@@ -1,5 +1,6 @@
-require('dotenv').config({ path: '.env' });
+require('dotenv').config();
 const { spawnSync } = require('child_process');
+const fs = require('fs');
 
 function req(name) {
   const v = process.env[name];
@@ -9,14 +10,31 @@ function req(name) {
 
 const brokerBaseUrl = req('PACT_BROKER_BASE_URL');
 const brokerToken   = req('PACT_BROKER_TOKEN');
-const providerVersion = process.env.PROVIDER_VERSION || process.env.GITHUB_SHA || 'local';
-const envName = process.env.ENVIRONMENT || 'test';
+
+const participant = process.env.PACTICIPANT || 'BDCT-JS-Provider';
+let   version     = process.env.VERSION || '';
+
+if (!version && process.env.VERSION_FILE) {
+  try {
+    version = fs.readFileSync(process.env.VERSION_FILE, 'utf8').trim();
+  } catch (e) {
+    console.error(`❌ Failed to read VERSION_FILE: ${process.env.VERSION_FILE}`);
+    process.exit(1);
+  }
+}
+
+if (!version) {
+  console.error('❌ Missing VERSION or VERSION_FILE');
+  process.exit(1);
+}
+
+const environment = process.env.ENVIRONMENT || 'test';
 
 const args = [
   'can-i-deploy',
-  '--pacticipant', 'CDCT-JS-Provider',
-  '--version', providerVersion,
-  '--to-environment', envName,
+  '--pacticipant', participant,
+  '--version', version,
+  '--to-environment', environment,
   '--broker-base-url', brokerBaseUrl,
   '--broker-token', brokerToken
 ];

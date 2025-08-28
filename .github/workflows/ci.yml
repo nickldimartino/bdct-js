@@ -1,0 +1,75 @@
+name: CI (Bi-directional)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      scenario:
+        description: "demo scenario (good|bad)"
+        required: true
+        default: "good"
+
+jobs:
+  bdct:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm ci
+
+      # -------- CONSUMER --------
+      - name: Consumer tests (good)
+        if: ${{ github.event_name == 'push' || inputs.scenario == 'good' }}
+        run: npm run consumer:test:good
+
+      - name: Consumer tests (bad)
+        if: ${{ inputs.scenario == 'bad' }}
+        run: npm run consumer:test:bad
+
+      - name: Publish consumer contract
+        run: npm run consumer:publish
+        env:
+          PACT_BROKER_BASE_URL: ${{ secrets.PACT_BROKER_BASE_URL }}
+          PACT_BROKER_TOKEN:    ${{ secrets.PACT_BROKER_TOKEN }}
+          BRANCH:               ${{ inputs.scenario == 'bad' && 'demo-bad' || github.ref_name }}
+          CONSUMER_VERSION:     ${{ github.sha }}
+
+      # -------- PROVIDER (OpenAPI) --------
+      - name: Publish provider contract (good)
+        if: ${{ github.event_name == 'push' || inputs.scenario == 'good' }}
+        run: npm run provider:publish:good
+        env:
+          PACT_BROKER_BASE_URL: ${{ secrets.PACT_BROKER_BASE_URL }}
+          PACT_BROKER_TOKEN:    ${{ secrets.PACT_BROKER_TOKEN }}
+          PROVIDER_BRANCH:      ${{ github.ref_name }}
+          PROVIDER_VERSION:     ${{ github.sha }}
+
+      - name: Publish provider contract (generated)
+        run: npm run provider:publish:gen:good
+        env:
+          PACT_BROKER_BASE_URL:  ${{ secrets.PACT_BROKER_BASE_URL }}
+          PACT_BROKER_TOKEN:     ${{ secrets.PACT_BROKER_TOKEN }}
+          PROVIDER_BRANCH:       ${{ github.ref_name }}
+
+      # -------- COMPATIBILITY CHECK --------
+      - name: can-i-deploy (provider perspective)
+        if: ${{ github.event_name == 'push' || inputs.scenario == 'good' }}
+        run: npm run can-i-deploy:provider
+        env:
+          PACT_BROKER_BASE_URL: ${{ secrets.PACT_BROKER_BASE_URL }}
+          PACT_BROKER_TOKEN:    ${{ secrets.PACT_BROKER_TOKEN }}
+          ENVIRONMENT:          test
+
+      - name: can-i-deploy (consumer perspective)
+        if: ${{ inputs.scenario == 'bad' }}
+        run: npm run can-i-deploy:consumer
+        env:
+          PACT_BROKER_BASE_URL: ${{ secrets.PACT_BROKER_BASE_URL }}
+          PACT_BROKER_TOKEN:    ${{ secrets.PACT_BROKER_TOKEN }}
+          ENVIRONMENT:          test
