@@ -11,31 +11,25 @@ function req(name) {
 
 const brokerBaseUrl = req('PACT_BROKER_BASE_URL');
 const brokerToken   = req('PACT_BROKER_TOKEN');
-const participant   = req('PACTICIPANT');
+const pacticipant   = req('PACTICIPANT');
 const envName       = process.env.ENVIRONMENT || 'test';
 
-let version = process.env.VERSION || '';
+// Version: prefer VERSION env, fallback to VERSION_FILE if it exists
+let version = process.env.VERSION;
 if (!version) {
   const vf = process.env.VERSION_FILE;
-  if (vf) {
-    try {
-      version = fs.readFileSync(vf, 'utf8').trim();
-    } catch (e) {
-      console.error(`❌ Failed to read VERSION_FILE: ${vf}`);
-      process.exit(1);
-    }
+  if (vf && fs.existsSync(vf)) {
+    version = fs.readFileSync(vf, 'utf8').trim();
   }
 }
-if (!version) version = process.env.GITHUB_SHA || '';
-
 if (!version) {
-  console.error('❌ No version found. Set VERSION or VERSION_FILE (or GITHUB_SHA).');
+  console.error('❌ No VERSION provided and VERSION_FILE not found.');
   process.exit(1);
 }
 
 const args = [
   'can-i-deploy',
-  '--pacticipant', participant,
+  '--pacticipant', pacticipant,
   '--version', version,
   '--to-environment', envName,
   '--broker-base-url', brokerBaseUrl,
@@ -43,5 +37,5 @@ const args = [
 ];
 
 console.log('▶️  pact-broker', args.join(' '));
-const result = spawnSync('pact-broker', args, { stdio: 'inherit', shell: true });
-process.exit(result.status ?? 1);
+const r = spawnSync('pact-broker', args, { stdio: 'inherit', shell: true });
+process.exit(r.status ?? 1);

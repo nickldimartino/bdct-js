@@ -83,6 +83,7 @@ jobs:
           PACT_BROKER_BASE_URL: ${{ secrets.PACT_BROKER_BASE_URL }}
           PACT_BROKER_TOKEN:    ${{ secrets.PACT_BROKER_TOKEN }}
           ENVIRONMENT:          test
+          VERSION:              ${{ github.sha }}   # <-- add this
 
       # "bad" -> consumer perspective should fail (incompatibility demo)
       - name: can-i-deploy (consumer perspective)
@@ -92,5 +93,7 @@ jobs:
           PACT_BROKER_BASE_URL: ${{ secrets.PACT_BROKER_BASE_URL }}
           PACT_BROKER_TOKEN:    ${{ secrets.PACT_BROKER_TOKEN }}
           ENVIRONMENT:          test
+          VERSION:              ${{ github.sha }}   # <-- add this too
+
 
       # MRDE: we skip can-i-deploy by default (separate pact pair for showcase)
