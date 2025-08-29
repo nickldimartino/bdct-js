@@ -1,4 +1,4 @@
-name: CI (Bi-directional)
+name: CI (Bi-directional + Rich/MRDE)
 
 on:
   push:
@@ -6,14 +6,13 @@ on:
   workflow_dispatch:
     inputs:
       scenario:
-        description: "demo scenario (good|bad)"
+        description: "demo scenario (good | bad | rich | mrde)"
         required: true
         default: "good"
 
 jobs:
   bdct:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
@@ -24,7 +23,7 @@ jobs:
 
       - run: npm ci
 
-      # -------- CONSUMER --------
+      # ---- CONSUMER TESTS ----
       - name: Consumer tests (good)
         if: ${{ github.event_name == 'push' || inputs.scenario == 'good' }}
         run: npm run consumer:test:good
@@ -33,45 +32,59 @@ jobs:
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.scenario == 'bad' }}
         run: npm run consumer:test:bad
 
-      - name: Publish consumer contract
+      - name: Consumer tests (rich)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.scenario == 'rich' }}
+        run: npm run consumer:test:rich
+
+      - name: Consumer tests (MRDE showcase)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.scenario == 'mrde' }}
+        run: npm run consumer:test:mrde
+
+      # ---- PUBLISH CONSUMER PACT(S) ----
+      - name: Publish consumer contract(s)
         run: npm run consumer:publish
         env:
           PACT_BROKER_BASE_URL: ${{ secrets.PACT_BROKER_BASE_URL }}
           PACT_BROKER_TOKEN:    ${{ secrets.PACT_BROKER_TOKEN }}
-          # For bad demo runs, publish on the demo-bad branch; otherwise use the current ref name.
-          BRANCH:               ${{ inputs.scenario == 'bad' && 'demo-bad' || github.ref_name }}
-          CONSUMER_VERSION:     ${{ github.sha }}
+          # Branch/tag rules:
+          # - bad => demo-bad
+          # - mrde => mrde-demo
+          # - otherwise => current ref
+          BRANCH: ${{ inputs.scenario == 'bad' && 'demo-bad' || (inputs.scenario == 'mrde' && 'mrde-demo' || github.ref_name) }}
+          CONSUMER_VERSION: ${{ github.sha }}
 
-      # -------- PROVIDER (OpenAPI) --------
-      # Always publish the GOOD provider spec so the "bad" demo highlights consumer incompatibility.
+      # ---- PROVIDER (OpenAPI) ----
+      # Always publish the GOOD provider contract so 'good' and 'rich' pass;
+      # 'bad' shows incompatibility from the consumer side.
       - name: Generate provider OpenAPI (GOOD)
+        if: ${{ github.event_name == 'push' || inputs.scenario != 'mrde' }}
         run: npm run openapi:gen:good
 
-      - name: Publish provider contract with self-verification (green)
+      - name: Publish provider contract (OpenAPI)
+        if: ${{ github.event_name == 'push' || inputs.scenario != 'mrde' }}
         run: |
-          # publish via your script so the self-verification flags are included
-          PROVIDER_VERIFY_EXIT_CODE=0 \
-          PROVIDER_BRANCH="${{ github.ref_name }}" \
-          PROVIDER_CONTRACT="openapi/provider.generated.yaml" \
-          PROVIDER_VERIFIER="jest" \
-          PROVIDER_VERIFIER_VERSION="30.0.5" \
-          PROVIDER_VERSION="${{ github.sha }}" \
-          PACT_BROKER_BASE_URL="${{ secrets.PACT_BROKER_BASE_URL }}" \
-          PACT_BROKER_TOKEN="${{ secrets.PACT_BROKER_TOKEN }}" \
-          node scripts/publish-provider.cjs
+          npx --no-install pactflow publish-provider-contract openapi/provider.generated.yaml \
+            --provider BDCT-JS-Provider \
+            --provider-app-version "${GITHUB_SHA}" \
+            --branch "${{ github.ref_name }}" \
+            --content-type application/yaml \
+            --broker-base-url "${PACT_BROKER_BASE_URL}" \
+            --broker-token "${PACT_BROKER_TOKEN}"
+        env:
+          PACT_BROKER_BASE_URL: ${{ secrets.PACT_BROKER_BASE_URL }}
+          PACT_BROKER_TOKEN:    ${{ secrets.PACT_BROKER_TOKEN }}
 
-      # -------- COMPATIBILITY CHECK --------
-      # Good: prove the provider version is deployable to 'test'
+      # ---- CAN I DEPLOY ----
+      # "good" & "rich" -> provider perspective should pass
       - name: can-i-deploy (provider perspective)
-        if: ${{ github.event_name == 'push' || inputs.scenario == 'good' }}
+        if: ${{ github.event_name == 'push' || inputs.scenario == 'good' || inputs.scenario == 'rich' }}
         run: npm run can-i-deploy:provider
         env:
           PACT_BROKER_BASE_URL: ${{ secrets.PACT_BROKER_BASE_URL }}
           PACT_BROKER_TOKEN:    ${{ secrets.PACT_BROKER_TOKEN }}
           ENVIRONMENT:          test
-          VERSION:              ${{ github.sha }}
 
-      # Bad: prove the consumer version on demo-bad is NOT deployable
+      # "bad" -> consumer perspective should fail (incompatibility demo)
       - name: can-i-deploy (consumer perspective)
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.scenario == 'bad' }}
         run: npm run can-i-deploy:consumer
@@ -79,4 +92,5 @@ jobs:
           PACT_BROKER_BASE_URL: ${{ secrets.PACT_BROKER_BASE_URL }}
           PACT_BROKER_TOKEN:    ${{ secrets.PACT_BROKER_TOKEN }}
           ENVIRONMENT:          test
-          VERSION:              ${{ github.sha }}
+
+      # MRDE: we skip can-i-deploy by default (separate pact pair for showcase)

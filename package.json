@@ -26,7 +26,13 @@
     "can-i-deploy:consumer": "cross-env PACTICIPANT=BDCT-JS-Consumer VERSION_FILE=tmp/last-consumer-version.txt node scripts/can-i-deploy.cjs",
 
     "demo:bdct:good": "npm run consumer:test:good && cross-env BRANCH=main node scripts/publish-consumer.cjs && cross-env PROVIDER_BRANCH=main npm run provider:publish:gen:good && npm run can-i-deploy:provider",
-    "demo:bdct:bad": "npm run consumer:test:bad && cross-env BRANCH=demo-bad node scripts/publish-consumer.cjs && cross-env PROVIDER_BRANCH=main npm run provider:publish:gen:bad && npm run can-i-deploy:consumer"
+    "demo:bdct:bad": "npm run consumer:test:bad && cross-env BRANCH=demo-bad node scripts/publish-consumer.cjs && cross-env PROVIDER_BRANCH=main npm run provider:publish:gen:bad && npm run can-i-deploy:consumer",
+  
+    "consumer:test:rich": "npm run clean:pacts && cross-env NODE_OPTIONS=--experimental-vm-modules jest src/consumer/consumer.pact.rich.test.js",
+    "consumer:test:mrde": "npm run clean:pacts && cross-env NODE_OPTIONS=--experimental-vm-modules jest src/consumer/consumer.pact.mrde.test.js",
+
+    "demo:bdct:rich": "npm run consumer:test:rich && cross-env BRANCH=main node scripts/publish-consumer.cjs && cross-env PROVIDER_BRANCH=main npm run provider:publish:gen:good && npm run can-i-deploy:provider",
+    "demo:mrde": "npm run consumer:test:mrde && cross-env BRANCH=mrde-demo node scripts/publish-consumer.cjs"
   },
   "devDependencies": {
     "@pact-foundation/pact": "^15.0.1",
