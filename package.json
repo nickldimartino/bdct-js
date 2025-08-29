@@ -9,35 +9,38 @@
     "clean:pacts": "node -e \"require('fs').rmSync('pacts',{recursive:true,force:true})\"",
 
     "consumer:test:good": "npm run clean:pacts && cross-env NODE_OPTIONS=--experimental-vm-modules jest src/consumer/consumer.pact.test.js",
-    "consumer:test:bad": "npm run clean:pacts && cross-env NODE_OPTIONS=--experimental-vm-modules jest src/consumer/consumer.pact.bad.test.js",
+    "consumer:test:bad":  "npm run clean:pacts && cross-env NODE_OPTIONS=--experimental-vm-modules jest src/consumer/consumer.pact.bad.test.js",
+    "consumer:test:rich": "npm run clean:pacts && cross-env NODE_OPTIONS=--experimental-vm-modules jest src/consumer/consumer.pact.rich.test.js",
+    "consumer:test:mrde": "npm run clean:pacts && cross-env NODE_OPTIONS=--experimental-vm-modules jest src/consumer/consumer.pact.mrde.test.js",
 
     "consumer:publish": "node scripts/publish-consumer.cjs",
 
     "openapi:gen:good": "cross-env DEMO_BAD=false node scripts/generate-openapi.cjs",
-    "openapi:gen:bad": "cross-env DEMO_BAD=true node scripts/generate-openapi.cjs",
+    "openapi:gen:bad":  "cross-env DEMO_BAD=true  node scripts/generate-openapi.cjs",
 
     "provider:publish:gen:good": "npm run openapi:gen:good && cross-env PROVIDER_CONTRACT=openapi/provider.generated.yaml node scripts/publish-provider.cjs",
-    "provider:publish:gen:bad": "npm run openapi:gen:bad && cross-env PROVIDER_CONTRACT=openapi/provider.generated.yaml node scripts/publish-provider.cjs",
+    "provider:publish:gen:bad":  "npm run openapi:gen:bad  && cross-env PROVIDER_CONTRACT=openapi/provider.generated.yaml node scripts/publish-provider.cjs",
 
     "provider:self:gen:good": "npm run openapi:gen:good && cross-env PROVIDER_VERIFY_EXIT_CODE=0 PROVIDER_CONTRACT=openapi/provider.generated.yaml node scripts/publish-provider.cjs",
-    "provider:self:gen:bad": "npm run openapi:gen:bad && cross-env PROVIDER_VERIFY_EXIT_CODE=1 PROVIDER_CONTRACT=openapi/provider.generated.yaml node scripts/publish-provider.cjs",
+    "provider:self:gen:bad":  "npm run openapi:gen:bad  && cross-env PROVIDER_VERIFY_EXIT_CODE=0 PROVIDER_CONTRACT=openapi/provider.generated.yaml node scripts/publish-provider.cjs",
+
+    "provider:record:deploy:test": "cross-env ENVIRONMENT=test PACTICIPANT=BDCT-JS-Provider VERSION_FILE=tmp/last-provider-version.txt node scripts/record-deployment.cjs",
 
     "can-i-deploy:provider": "cross-env PACTICIPANT=BDCT-JS-Provider VERSION_FILE=tmp/last-provider-version.txt node scripts/can-i-deploy.cjs",
-    "can-i-deploy:consumer": "cross-env PACTICIPANT=BDCT-JS-Consumer VERSION_FILE=tmp/last-consumer-version.txt node scripts/can-i-deploy.cjs",
+    "can-i-deploy:consumer": "cross-env PACTICIPANT=BDCT-JS-Consumer  VERSION_FILE=tmp/last-consumer-version.txt  node scripts/can-i-deploy.cjs",
 
-    "demo:bdct:good": "npm run consumer:test:good && cross-env BRANCH=main node scripts/publish-consumer.cjs && cross-env PROVIDER_BRANCH=main npm run provider:publish:gen:good && npm run can-i-deploy:provider",
-    "demo:bdct:bad": "npm run consumer:test:bad && cross-env BRANCH=demo-bad node scripts/publish-consumer.cjs && cross-env PROVIDER_BRANCH=main npm run provider:publish:gen:bad && npm run can-i-deploy:consumer",
-  
-    "consumer:test:rich": "npm run clean:pacts && cross-env NODE_OPTIONS=--experimental-vm-modules jest src/consumer/consumer.pact.rich.test.js",
-    "consumer:test:mrde": "npm run clean:pacts && cross-env NODE_OPTIONS=--experimental-vm-modules jest src/consumer/consumer.pact.mrde.test.js",
+    "demo:bdct:good": "npm run consumer:test:good && cross-env BRANCH=main node scripts/publish-consumer.cjs && cross-env PROVIDER_BRANCH=main npm run provider:self:gen:good && npm run provider:record:deploy:test && npm run can-i-deploy:provider",
+    "demo:bdct:bad":  "npm run consumer:test:bad  && cross-env BRANCH=demo-bad CONSUMER_VERSION_SUFFIX=bad node scripts/publish-consumer.cjs && cross-env PROVIDER_BRANCH=main npm run provider:self:gen:bad  && npm run provider:record:deploy:test && npm run can-i-deploy:consumer",
+    "demo:bdct:rich": "npm run consumer:test:rich && cross-env BRANCH=main CONSUMER_VERSION_SUFFIX=rich node scripts/publish-consumer.cjs && cross-env PROVIDER_BRANCH=main npm run provider:self:gen:good && npm run provider:record:deploy:test && npm run can-i-deploy:provider",
+    "demo:mrde": "npm run consumer:test:mrde && cross-env BRANCH=mrde-demo CONSUMER_VERSION_SUFFIX=mrde node scripts/publish-consumer.cjs",
 
-    "demo:bdct:rich": "npm run consumer:test:rich && cross-env BRANCH=main node scripts/publish-consumer.cjs && cross-env PROVIDER_BRANCH=main npm run provider:publish:gen:good && npm run can-i-deploy:provider",
-    "demo:mrde": "npm run consumer:test:mrde && cross-env BRANCH=mrde-demo node scripts/publish-consumer.cjs"
+    "generate:pact": "npx dotenv -e .env -- npx pactflow-ai@latest generate --openapi ./openapi/provider.generated.yaml --endpoint /menu --output ./src/consumer/consumer.pact.ai.ts --language typescript --native-tls"
   },
   "devDependencies": {
     "@pact-foundation/pact": "^15.0.1",
     "@pact-foundation/pact-cli": "^16.1.2",
     "cross-env": "^7.0.3",
+    "dotenv-cli": "^10.0.0",
     "jest": "^30.0.5",
     "swagger-jsdoc": "^6.2.8",
     "yaml": "^2.8.1"

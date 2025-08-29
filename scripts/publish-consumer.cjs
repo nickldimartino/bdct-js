@@ -1,8 +1,7 @@
 // scripts/publish-consumer.cjs
-require('dotenv').config();
+require('dotenv').config({ path: '.env' });
 const { spawnSync } = require('child_process');
 const fs = require('fs');
-const path = require('path');
 
 function req(name) {
   const v = process.env[name];
@@ -12,23 +11,29 @@ function req(name) {
 
 const brokerBaseUrl = req('PACT_BROKER_BASE_URL');
 const brokerToken   = req('PACT_BROKER_TOKEN');
-const branch        = process.env.BRANCH || 'main';
 
-// Determine a unique consumer version (prefer Git SHA)
-let consumerVersion = process.env.CONSUMER_VERSION;
-if (!consumerVersion || consumerVersion.toLowerCase() === 'local') {
+const branch = process.env.BRANCH || process.env.GITHUB_REF_NAME || 'main';
+
+// base version: explicit > git sha > timestamp
+let baseVersion = process.env.CONSUMER_VERSION;
+if (!baseVersion || baseVersion.toLowerCase() === 'local') {
   try {
     const r = spawnSync('git', ['rev-parse', '--short', 'HEAD'], { encoding: 'utf8' });
-    if (r.status === 0) consumerVersion = r.stdout.trim();
+    if (r.status === 0) baseVersion = r.stdout.trim();
   } catch {}
 }
-if (!consumerVersion || consumerVersion.toLowerCase() === 'local') {
-  consumerVersion = new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14);
-}
+if (!baseVersion) baseVersion = String(Date.now());
 
-// persist for subsequent can-i-deploy
-fs.mkdirSync('tmp', { recursive: true });
-fs.writeFileSync(path.join('tmp', 'last-consumer-version.txt'), consumerVersion, 'utf8');
+// salt logic: if a suffix is provided OR branch != main, append a stable suffix + timestamp
+const suffixEnv = process.env.CONSUMER_VERSION_SUFFIX || '';
+const stamp = new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14);
+
+let consumerVersion = baseVersion;
+if (suffixEnv) {
+  consumerVersion = `${baseVersion}-${suffixEnv}-${stamp}`;
+} else if (branch !== 'main') {
+  consumerVersion = `${baseVersion}-${branch}-${stamp}`;
+}
 
 const args = [
   'publish', './pacts',
@@ -40,5 +45,18 @@ const args = [
 ];
 
 console.log('▶️  pact-broker', args.join(' '));
-const result = spawnSync('pact-broker', args, { stdio: 'inherit', shell: true });
+const env = { ...process.env };
+if (env.PACT_BROKER_DISABLE_SSL_VERIFICATION === 'true' || env.PACT_INSECURE_TLS === 'true') {
+  env.PACT_BROKER_DISABLE_SSL_VERIFICATION = 'true';
+}
+
+const result = spawnSync('pact-broker', args, { stdio: 'inherit', shell: true, env });
+
+// record the version for can-i-deploy:consumer
+if ((result.status ?? 1) === 0) {
+  fs.mkdirSync('tmp', { recursive: true });
+  fs.writeFileSync('tmp/last-consumer-version.txt', consumerVersion.trim());
+  console.log(`📝 Wrote consumer version to tmp/last-consumer-version.txt (${consumerVersion})`);
+}
+
 process.exit(result.status ?? 1);
