@@ -40,57 +40,41 @@ Unlike Consumer-Driven Contract Testing (CDCT), BDCT does not require the provid
 <details>
 <summary><strong>Good (local):</strong></summary>
 
-Run demo:bdct:good OR
-
-npm ci
-
-npm run consumer:test:good
-
-npm run consumer:publish
-
-npm run provider:spec:good
-
-npm run provider:publish
-
-npm run can-i-deploy # optional
+Run demo:bdct:good
 
 </details>
 
 <details>
 <summary><strong>Bad (local):</strong></summary>
 
-Run demo:bdct:bad or
-
-npm ci
-
-npm run consumer:test:bad
-
-npm run consumer:publish:bad
-
-npm run provider:spec:bad
-
-npm run provider:publish
+Run demo:bdct:bad
 
 </details>
 
+<details>
 <summary><strong>Rich (local):</strong></summary>
 
 Run demo:bdct:rich
 
 </details>
 
+<details>
 <summary><strong>MRDE (local):</strong></summary>
 
 Run demo:mrde
 
 </details>
 
-**CI (GitHub Actions):**
+<details>
+<summary><strong>CI (GitHub Actions):</strong></summary>
+
 - Push to `main`
 - Workflow runs:
   - generate & publish consumer pact
   - generate & publish provider spec
   - run can-i-deploy
+
+</details>
 
 ---
 
