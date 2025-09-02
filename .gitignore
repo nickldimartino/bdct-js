@@ -13,3 +13,5 @@ pacts/
 
 # generate file isn't committed
 openapi/provider.generated.yaml
+
+certs/
