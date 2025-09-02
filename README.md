@@ -100,20 +100,26 @@ Run demo:mrde
 ├─ package.json # npm scripts
 ├─ .env # local-only secrets
 ├─ openapi/
-│ └─ provider.generated.yaml # OpenAPI spec (good/bad)
+│   └─ provider.generated.yaml # OpenAPI spec (good/bad)
 ├─ src/
-│ ├─ consumer/
-│ │ ├─ consumer.good.test.js # GOOD contract test
-│ │ ├─ consumer.bad.test.js # BAD contract test
-│ │ └─ consumer.rich.test.js # RICH + MRDE demo
-│ └─ provider/
-│ ├─ server.js # Example provider
-│ └─ generate-spec.js # JSDoc → OpenAPI generator
+│  ├─ consumer/
+│  │  ├─ consumer.good.test.js # GOOD contract test
+│  │  ├─ consumer.bad.test.js  # BAD contract test
+|  |  ├─ consumer.rich.test.js # RICH contract test
+|  |  ├─ consumer.mrde.test.js # MRDE contract test
+│  │  └─ consumer.ai.test.js   # PactFlow AI contract test
+│  └─ provider/
+│     └─ erver.js # Example provider
+├─ tmp/
+│  ├─ last-consumer-version.txt # consumer version creation
+│  ├─ last-provider-version.txt # provider version creation
+│  └─ provider-self.verify.json # provider verification
 └─ scripts/
-├─ publish-consumer.cjs
-├─ publish-provider.cjs
-├─ record-deployment.cjs
-├─ can-i-deploy.cjs
+   ├─ publish-consumer.cjs   # publish consumer contract
+   ├─ publish-provider.cjs   # publish provider contract
+   ├─ record-deployment.cjs  # record consumer/provider deploy
+   ├─ can-i-deploy.cjs       # deployment check
+   └─ generate-spec.js       # JSDoc → OpenAPI generator
 ```
 ---
 
